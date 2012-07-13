@@ -24,6 +24,14 @@ import re
 from lxml import etree
 from pymei import MeiDocument, MeiElement, XmlExport
 
+import argparse
+
+# set up command line argument structure
+parser = argparse.ArgumentParser(description='Convert a MEI to MusicXML or MusicXML to MEI.')
+parser.add_argument('-fin', '--filein', help='input file')
+parser.add_argument('-fout', '--fileout', help='output file')
+parser.add_argument('-v', '--verbose', help='increase output verbosity', action='store_true')
+
 class FileConverter(object):
     
     to_timewise_xslt_path = 'partwisetotimewise.xslt'

@@ -20,7 +20,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 '''
 
-from fileconverter import FileConverter
+from fileconverter import *
+import os
 
 class MusicXMLtoMei(FileConverter):
 
@@ -333,3 +334,24 @@ class MusicXMLtoMei(FileConverter):
         rest.addAttribute('dur.ges', dur_ges)
 
         return rest
+
+if __name__ == '__main__':
+    # parse command line arguments
+    args = parser.parse_args()
+
+    input_path = args.filein
+    if not os.path.exists(input_path):
+        raise ValueError('The input file does not exist')
+
+    output_path = args.fileout
+
+    # check file extensions are correct for this type of conversion
+    _, input_ext = os.path.splitext(input_path)
+    if input_ext != '.xml':
+        raise ValueError('Input path must be an uncompressed MusicXML file')
+    _, output_ext = os.path.splitext(output_path)
+    if output_ext != '.mei':
+        raise ValueError('Ouput path must have the file extension .mei')
+
+    meiconv = MusicXMLtoMei(input_path, output_path)
+    meiconv.convert()
