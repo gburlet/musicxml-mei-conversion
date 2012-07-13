@@ -117,7 +117,7 @@ class MusicXMLtoMei(FileConverter):
             for s in xml_tab_strings:
                 strings_pitches.append(self._get_text(s.xpath("tuning-step")[0]) + self._get_text(s.xpath("tuning-octave")[0]))
 
-            staff_def = self._create_staff_def(n+1, xml_label_full, xml_label_abbr, xml_clef_shape, strings_pitches, xml_ppq, xml_key_fifths, xml_key_mode)
+            staff_def = self._create_staff_def(str(n+1), xml_label_full, xml_label_abbr, xml_clef_shape, strings_pitches, xml_ppq, xml_key_fifths, xml_key_mode)
             map_pid_sd[xml_part_id] = staff_def
 
             # instruments
@@ -179,8 +179,8 @@ class MusicXMLtoMei(FileConverter):
                         note = self._create_note(pname, oct, string, fret, dur, dur_ges)
                         layer.addChild(note)
 
-                    measure.addChild(staff)
-                    staff.addChild(layer)
+                measure.addChild(staff)
+                staff.addChild(layer)
 
             section.addChild(measure)
 
@@ -257,7 +257,7 @@ class MusicXMLtoMei(FileConverter):
         '''
 
         staff_def = MeiElement('staffDef')
-        staff_def.addAttribute('n', str(n))
+        staff_def.addAttribute('n', n)
         staff_def.addAttribute('label.full', label_full)
         staff_def.addAttribute('clef.shape', clef_shape)
         staff_def.addAttribute('tab.strings', ' '.join(tab_strings))
