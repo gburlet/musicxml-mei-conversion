@@ -156,7 +156,8 @@ class MusicXMLtoMei(FileConverter):
 
                 # get notes played by the part
                 notes = p.xpath("note")
-                for n in notes:
+                cur_chord = None
+                for i, n in enumerate(notes):
                     dur_ges = self._get_text(n.xpath("duration")[0])
                     type = self._get_text(n.xpath("type")[0])
                     dur = MusicXMLtoMei.note_type.get(type)
@@ -176,8 +177,27 @@ class MusicXMLtoMei(FileConverter):
                         string = self._get_text(n.xpath("notations/technical/string")[0])
                         fret = self._get_text(n.xpath("notations/technical/fret")[0])
                         
-                        note = self._create_note(pname, oct, string, fret, dur, dur_ges)
-                        layer.addChild(note)
+                        next_chord_tag = False
+                        # look ahead to next note
+                        if i+1 < len(notes):
+                            next_chord_tag = notes[i+1].xpath("boolean(chord)")
+
+                        if next_chord_tag:
+                            # a chord is beginning or continuing
+                            if cur_chord is None:
+                                # a chord is beginning
+                                cur_chord = self._create_chord(dur, dur_ges)
+                                layer.addChild(cur_chord)
+
+                        if cur_chord is not None:
+                            note = self._create_note(pname, oct, string, fret)
+                            cur_chord.addChild(note)
+                        else:
+                            note = self._create_note(pname, oct, string, fret, dur=dur, dur_ges=dur_ges)
+                            layer.addChild(note)
+
+                        if not next_chord_tag:
+                            cur_chord = None
 
                 measure.addChild(staff)
                 staff.addChild(layer)
@@ -309,7 +329,7 @@ class MusicXMLtoMei(FileConverter):
 
         return measure
 
-    def _create_note(self, pname, oct, string, fret, dur, dur_ges):
+    def _create_note(self, pname, oct, string, fret, **kwargs):
         '''
         Creates a mei note element
         '''
@@ -319,8 +339,10 @@ class MusicXMLtoMei(FileConverter):
         note.addAttribute('oct', oct)
         note.addAttribute('tab.string', string)
         note.addAttribute('tab.fret', fret)
-        note.addAttribute('dur', dur)
-        note.addAttribute('dur.ges', dur_ges)
+        if 'dur' in kwargs:
+            note.addAttribute('dur', kwargs['dur'])
+        if 'dur_ges' in kwargs:
+            note.addAttribute('dur.ges', kwargs['dur_ges'])
 
         return note
 
@@ -334,6 +356,17 @@ class MusicXMLtoMei(FileConverter):
         rest.addAttribute('dur.ges', dur_ges)
 
         return rest
+
+    def _create_chord(self, dur, dur_ges):
+        '''
+        Creates a chord element
+        '''
+
+        chord = MeiElement('chord')
+        chord.addAttribute('dur', dur)
+        chord.addAttribute('dur.ges', dur_ges)
+
+        return chord
 
 if __name__ == '__main__':
     # parse command line arguments
