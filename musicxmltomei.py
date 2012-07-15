@@ -25,6 +25,7 @@ import os
 
 class MusicXMLtoMei(FileConverter):
 
+    # musicxml note type to mei
     note_type = {
         'whole': '1',
         'half': '2',
@@ -34,6 +35,10 @@ class MusicXMLtoMei(FileConverter):
         'long': 'long',
         'breve': 'breve'
     }
+
+    # musicxml integer accidentals to mei
+    # integer of accidental is array index
+    accidentals = [None, 's', 'ss', 'ff', 'f']
 
     def __init__(self, *args):
         super(MusicXMLtoMei, self).__init__(*args)
@@ -174,6 +179,10 @@ class MusicXMLtoMei(FileConverter):
                     else:
                         pname = self._get_text(n.xpath("pitch/step")[0])
                         oct = self._get_text(n.xpath("pitch/octave")[0])
+                        accid = None
+                        if n.xpath("boolean(pitch/alter)"):
+                            alter = self._get_text(n.xpath("pitch/alter")[0])
+                            accid = MusicXMLtoMei.accidentals[int(alter)]
                         string = self._get_text(n.xpath("notations/technical/string")[0])
                         fret = self._get_text(n.xpath("notations/technical/fret")[0])
                         
@@ -190,10 +199,10 @@ class MusicXMLtoMei(FileConverter):
                                 layer.addChild(cur_chord)
 
                         if cur_chord is not None:
-                            note = self._create_note(pname, oct, string, fret)
+                            note = self._create_note(pname, oct, string, fret, accid)
                             cur_chord.addChild(note)
                         else:
-                            note = self._create_note(pname, oct, string, fret, dur=dur, dur_ges=dur_ges)
+                            note = self._create_note(pname, oct, string, fret, accid, dur=dur, dur_ges=dur_ges)
                             layer.addChild(note)
 
                         if not next_chord_tag:
@@ -329,7 +338,7 @@ class MusicXMLtoMei(FileConverter):
 
         return measure
 
-    def _create_note(self, pname, oct, string, fret, **kwargs):
+    def _create_note(self, pname, oct, string, fret, accid=None, **kwargs):
         '''
         Creates a mei note element
         '''
@@ -337,6 +346,8 @@ class MusicXMLtoMei(FileConverter):
         note = MeiElement('note')
         note.addAttribute('pname', pname)
         note.addAttribute('oct', oct)
+        if accid is not None:
+            note.addAttribute('accid.ges', accid)
         note.addAttribute('tab.string', string)
         note.addAttribute('tab.fret', fret)
         if 'dur' in kwargs:
