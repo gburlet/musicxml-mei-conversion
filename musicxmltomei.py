@@ -40,11 +40,14 @@ class MusicXMLtoMei(FileConverter):
     # integer of accidental is array index
     accidentals = [None, 's', 'ss', 'ff', 'f']
 
-    def __init__(self, *args):
-        super(MusicXMLtoMei, self).__init__(*args)
+    def __init__(self, **kwargs):
+        super(MusicXMLtoMei, self).__init__(**kwargs)
 
     def convert(self):
-        self.mxml = etree.parse(self.input_path).getroot()
+        if hasattr(self, 'input_path'):
+            self.mxml = etree.parse(self.input_path).getroot()
+        else:
+            self.mxml = etree.fromstring(self.input_str)
 
         # convert to timewise if partwise (easier to convert to mei)
         if self.mxml.tag == 'score-partwise':
@@ -222,7 +225,10 @@ class MusicXMLtoMei(FileConverter):
         score_def.addChild(staff_grp)
         score.addChild(section)
 
-        XmlExport.meiDocumentToFile(self.meidoc, self.output_path)
+        if hasattr(self, 'output_path'):
+            XmlExport.meiDocumentToFile(self.meidoc, self.output_path)
+        else:
+            return XmlExport.meiDocumentToText(self.meidoc)
         
     def _create_title_stmt(self, xml_title):
         '''
@@ -397,5 +403,5 @@ if __name__ == '__main__':
     if output_ext != '.mei':
         raise ValueError('Ouput path must have the file extension .mei')
 
-    meiconv = MusicXMLtoMei(input_path, output_path)
+    meiconv = MusicXMLtoMei(input_path=input_path, output_path=output_path)
     meiconv.convert()

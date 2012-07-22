@@ -36,9 +36,17 @@ class FileConverter(object):
     
     to_timewise_xslt_path = 'partwisetotimewise.xslt'
 
-    def __init__(self, input_path, output_path):
-        self.input_path = input_path
-        self.output_path = output_path
+    def __init__(self, **kwargs):
+        # for file in, file out scenarios
+        if 'input_path' in kwargs:
+            self.input_path = kwargs['input_path']
+        elif 'input_str' in kwargs:
+            self.input_str = kwargs['input_str']
+        else:
+            raise ValueError('Some input is needed to process.')
+
+        if 'output_path' in kwargs:
+            self.output_path = kwargs['output_path']
 
     def _get_text(self, element):
         '''
