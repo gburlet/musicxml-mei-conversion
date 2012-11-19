@@ -122,8 +122,22 @@ class MusicXMLtoMei(FileConverter):
             
             xml_tab_strings = xml_first_part_measure.xpath("staff-details/staff-tuning")
             strings_pitches = []
-            for s in xml_tab_strings:
-                strings_pitches.append(self._get_text(s.xpath("tuning-step")[0]) + self._get_text(s.xpath("tuning-octave")[0]))
+            for s in reversed(xml_tab_strings):
+                tuning_step = self._get_text(s.xpath("tuning-step")[0])
+                pitch_ind = FileConverter.pitch_classes.index(tuning_step)
+
+                tuning_alter = s.xpath("tuning-alter")
+                if tuning_alter:
+                    pitch_ind = (pitch_ind + int(self._get_text(tuning_alter[0]))) % len(FileConverter.pitch_classes)
+                
+                pname = FileConverter.pitch_classes[pitch_ind]
+
+                # MEI encodes the written pitch, not the sounding pitch
+                # Since guitar is written an octave above the sounding pitch to get everything
+                # on one staff, transpose the sounding pitch by an octave
+                oct = int(self._get_text(s.xpath("tuning-octave")[0])) + 1
+
+                strings_pitches.append(pname + str(oct))
 
             staff_def = self._create_staff_def(str(n+1), xml_label_full, xml_label_abbr, xml_clef_shape, strings_pitches, xml_ppq, xml_key_fifths, xml_key_mode)
             map_pid_sd[xml_part_id] = staff_def
@@ -146,7 +160,8 @@ class MusicXMLtoMei(FileConverter):
 
             xml_parts = m.xpath("part")
 
-            # add in score definition of key or tempo has changed in the new measure
+            '''
+            # add in score definition if key or tempo has changed in the new measure
             xml_key_fifths = self._get_text(xml_parts[0].xpath("attributes/key/fifths")[0])
             xml_key_mode = self._get_text(xml_parts[0].xpath("attributes/key/mode")[0])
             xml_meter = (self._get_text(xml_parts[0].xpath("attributes/time/beats")[0]),
@@ -155,6 +170,7 @@ class MusicXMLtoMei(FileConverter):
             if prev_score_def is None or not self._compare_elements(prev_score_def, score_def):
                 section.addChild(score_def)
                 prev_score_def = score_def
+            '''
 
             for p in xml_parts:
                 xml_part_id = p.attrib.get('id')
@@ -186,8 +202,14 @@ class MusicXMLtoMei(FileConverter):
                         if n.xpath("boolean(pitch/alter)"):
                             alter = self._get_text(n.xpath("pitch/alter")[0])
                             accid = MusicXMLtoMei.accidentals[int(alter)]
-                        string = self._get_text(n.xpath("notations/technical/string")[0])
-                        fret = self._get_text(n.xpath("notations/technical/fret")[0])
+                        sx = n.xpath("notations/technical/string")
+                        string = None
+                        if len(sx):
+                            string = self._get_text(sx[0])
+                        fret = None
+                        fx = n.xpath("notations/technical/fret")
+                        if len(fx):
+                            fret = self._get_text(fx[0])
                         
                         next_chord_tag = False
                         # look ahead to next note
@@ -253,6 +275,10 @@ class MusicXMLtoMei(FileConverter):
             pers_name = MeiElement('persName')
             pers_name.addAttribute('role', type)
             if name is not None:
+                try:
+                    name = str(name)
+                except UnicodeEncodeError:
+                    name = name.encode('utf-8', 'replace')
                 pers_name.setValue(name)
             resp_stmt.addChild(pers_name)
 
@@ -344,7 +370,7 @@ class MusicXMLtoMei(FileConverter):
 
         return measure
 
-    def _create_note(self, pname, oct, string, fret, accid=None, **kwargs):
+    def _create_note(self, pname, oct, string=None, fret=None, accid=None, **kwargs):
         '''
         Creates a mei note element
         '''
@@ -354,8 +380,10 @@ class MusicXMLtoMei(FileConverter):
         note.addAttribute('oct', oct)
         if accid is not None:
             note.addAttribute('accid.ges', accid)
-        note.addAttribute('tab.string', string)
-        note.addAttribute('tab.fret', fret)
+        if string:
+            note.addAttribute('tab.string', string)
+        if fret:
+            note.addAttribute('tab.fret', fret)
         if 'dur' in kwargs:
             note.addAttribute('dur', kwargs['dur'])
         if 'dur_ges' in kwargs:
