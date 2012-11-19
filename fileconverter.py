@@ -28,13 +28,14 @@ import argparse
 
 # set up command line argument structure
 parser = argparse.ArgumentParser(description='Convert a MEI to MusicXML or MusicXML to MEI.')
-parser.add_argument('-fin', '--filein', help='input file')
-parser.add_argument('-fout', '--fileout', help='output file')
+parser.add_argument('filein', help='input file')
+parser.add_argument('fileout', help='output file')
 parser.add_argument('-v', '--verbose', help='increase output verbosity', action='store_true')
 
 class FileConverter(object):
     
-    to_timewise_xslt_path = 'partwisetotimewise.xslt'
+    to_timewise_xslt_path = '/Users/gburlet/University/MA/musicxmlmeiconversion/partwisetotimewise.xslt'
+    pitch_classes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
 
     def __init__(self, **kwargs):
         # for file in, file out scenarios
