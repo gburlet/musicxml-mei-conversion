@@ -22,7 +22,7 @@ THE SOFTWARE.
 
 import re
 from lxml import etree
-from pymei import MeiDocument, MeiElement, XmlExport
+from pymei import MeiDocument, MeiElement, XmlExport, XmlImport
 
 import argparse
 

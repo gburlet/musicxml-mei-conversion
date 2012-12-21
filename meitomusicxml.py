@@ -20,13 +20,57 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 '''
 
+from fileconverter import *
+import os
+
 class MeitoMusicXML(FileConverter):
 
-    def __init__(self, *args):
-        super(MusicXMLtoMei, self).__init__(*args)
+    def __init__(self, **kwargs):
+        super(MeitoMusicXML, self).__init__(**kwargs)
 
     def convert(self):
-        raise NotImplementedError('Conversion from MEI to MusicXML has not been implemented yet')
+        # read input mei file
+        if hasattr(self, 'input_path'):
+            self.meidoc = XmlImport.documentFromFile(self.input_path)
+        else:
+            self.meidoc = XmlImport.documentFromText(self.input_str)
+
+        # begin constructing XML document
+        score_timewise = etree.Element('score-timewise')
+
+        # work title
+        title = self.meidoc.getElementsByName('title')
+        if title:
+            title = title[0].value
+            movement_title = etree.Element('movement-title')
+            movement_title.text = title
+            score_timewise.append(movement_title)
+
+        # identification
+        identification = etree.Element('identification')
+        pers_names = self.meidoc.getElementsByName('persName')
+        for p in pers_names:
+            creator = etree.Element('creator')
+            role = p.getAttribute('role').value
+            creator.set('type', role)
+            creator.text = p.value
+            identification.append(creator)
+        score_timewise.append(identification)
+
+        # encoder
+        encoding = etree.Element('encoding')
+        application = self.meidoc.getElementsByName('application')
+        if application:
+            application = application[0].value
+            software = etree.Element('software')
+            software.text = application
+            encoding.append(software)
+        score_timewise.append(encoding)
+
+        musicxml_str = etree.tostring(score_timewise, pretty_print=True)
+        fh = open(self.output_path, 'w')
+        fh.write(musicxml_str)
+        fh.close()
 
 if __name__ == '__main__':
     # parse command line arguments
@@ -46,5 +90,5 @@ if __name__ == '__main__':
     if output_ext != '.xml':
         raise ValueError('Ouput path must have the file extension .xml')
 
-    meiconv = MeitoMusicXML(input_path, output_path)
+    meiconv = MeitoMusicXML(input_path=input_path, output_path=output_path)
     meiconv.convert()
