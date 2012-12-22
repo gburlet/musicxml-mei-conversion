@@ -54,6 +54,8 @@ class FileConverter(object):
         Helper method to get the text of an element 
         returned by an xpath query
         '''
+        if type(element) is list:
+            element = element[0]
 
         if element is not None:
             return element.text
